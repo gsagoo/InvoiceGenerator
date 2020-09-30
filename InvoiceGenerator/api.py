@@ -79,9 +79,11 @@ class Address(UnicodeProperty):
         if self.division:
             address_line.append(self.division)
         address_line += [
-            self.address,
-            u' '.join(filter(None, (self.zip_code, self.city))),
+            self.address, self.city
+           # u' '.join(filter(None, (self.city, self.zip_code))),
             ]
+        if self.zip_code:
+            address_line.append(self.zip_code)
         if self.country:
             address_line.append(self.country)
         if self.vat_id:
