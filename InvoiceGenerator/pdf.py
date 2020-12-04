@@ -13,6 +13,7 @@ from PIL import Image
 from babel.dates import format_date
 from babel.numbers import format_currency
 
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -143,12 +144,12 @@ class SimpleInvoice(BaseInvoice):
         # Texty
         self._drawMain()
         self._drawTitle()
-        self._drawProvider(self.TOP - 10, self.LEFT + 3)
-        self._drawClient(self.TOP - 39, self.LEFT + 91)
-        self._drawPayment(self.TOP - 47, self.LEFT + 3)
-        self._drawQR(self.TOP - 39.4, self.LEFT + 61, 75.0)
-        self._drawDates(self.TOP - 10, self.LEFT + 91)
-        self._drawItems(self.TOP - 80, self.LEFT)
+        self._drawProvider(self.TOP - 30, self.LEFT + 3)
+        self._drawClient(self.TOP - 64, self.LEFT + 91)
+        self._drawPayment(self.TOP - 72, self.LEFT + 3)
+        self._drawQR(self.TOP - 64.4, self.LEFT + 53, 94.0)
+        self._drawDates(self.TOP - 30, self.LEFT + 91)
+        self._drawItems(self.TOP - 120, self.LEFT)
 
         # self.pdf.setFillColorRGB(0, 0, 0)
 
@@ -168,11 +169,11 @@ class SimpleInvoice(BaseInvoice):
 
     def _drawTitle(self):
         # Up line
-        self.pdf.drawString(self.LEFT*mm, (self.TOP + 10)*mm, self.invoice.title)
+        self.pdf.drawString(self.LEFT*mm, (self.TOP -14)*mm, self.invoice.title)
         if not self.invoice.use_tax:
             self.pdf.drawString(
                 (self.LEFT + 80) * mm,
-                (self.TOP + 10)*mm,
+                (self.TOP -14)*mm,
                 _(u'Invoice number: %s') % self.invoice.number,
             )
         else:
@@ -186,26 +187,26 @@ class SimpleInvoice(BaseInvoice):
         # Borders
         self.pdf.rect(
             self.LEFT * mm,
-            (self.TOP - 68) * mm, #Adjusts the vertical shift of the rectangle main box around top 4 tiles
+            (self.TOP - 98) * mm, #Adjusts the vertical shift of the rectangle main box around top 4 tiles
             (self.LEFT + 180) * mm, #Adjusts the width of the box of the main box around top 4 tiles, some line.Tos have to be changed to 190 to accommodate
-            65 * mm, #Adjusts the actual height of the main box
+            75 * mm, #Adjusts the actual height of the main box
             stroke=True,
             fill=False,
         )
 
         path = self.pdf.beginPath()  #Vertical line between client and provider
-        path.moveTo((self.LEFT + 88) * mm, (self.TOP - 3) * mm)
-        path.lineTo((self.LEFT + 88) * mm, (self.TOP - 68) * mm)
+        path.moveTo((self.LEFT + 88) * mm, (self.TOP - 23) * mm)
+        path.lineTo((self.LEFT + 88) * mm, (self.TOP - 98) * mm)
         self.pdf.drawPath(path, True, True)
 
         path = self.pdf.beginPath()  #Horizontal line betwen provider and QR code
-        path.moveTo(self.LEFT * mm, (self.TOP - 39) * mm)
-        path.lineTo((self.LEFT + 88) * mm, (self.TOP - 39) * mm)
+        path.moveTo(self.LEFT * mm, (self.TOP - 64) * mm)
+        path.lineTo((self.LEFT + 88) * mm, (self.TOP - 64) * mm)
         self.pdf.drawPath(path, True, True)
 
         path = self.pdf.beginPath() #Horizontal line between Invoice date and Client
-        path.moveTo((self.LEFT + 88) * mm, (self.TOP - 27) * mm)
-        path.lineTo((self.LEFT + 190) * mm, (self.TOP - 27) * mm)
+        path.moveTo((self.LEFT + 88) * mm, (self.TOP - 47) * mm)
+        path.lineTo((self.LEFT + 190) * mm, (self.TOP - 47) * mm)
         self.pdf.drawPath(path, True, True)
 
     def _drawAddress(self, top, left, width, height, header_string, address):
@@ -215,7 +216,7 @@ class SimpleInvoice(BaseInvoice):
         self.pdf.drawText(text)
 
         frame = Frame((left - 3) * mm, (top - 29) * mm, width*mm, height*mm)
-        header = ParagraphStyle('header', fontName='DejaVu', fontSize=11, leading=20)
+        header = ParagraphStyle('header', fontName='DejaVu', fontSize=11, leading=20, textColor=colors.grey)
         default = ParagraphStyle('default', fontName='DejaVu', fontSize=11, leading=17)
         small = ParagraphStyle('small', parent=default, fontSize=11, leading=16)
         story = [
@@ -228,24 +229,30 @@ class SimpleInvoice(BaseInvoice):
 
         if address.logo_filename:
             im = Image.open(address.logo_filename)
-            height = 30.0
+            #height = 30.0
+            #width = float(im.size[0]) / (float(im.size[1])/height)
+            #self.pdf.drawImage(self.invoice.provider.logo_filename, (left + 84) * mm - width, (top - 4) * mm, width, height, mask="auto")
+            height = 55.0
             width = float(im.size[0]) / (float(im.size[1])/height)
-            self.pdf.drawImage(self.invoice.provider.logo_filename, (left + 84) * mm - width, (top - 4) * mm, width, height, mask="auto")
+            self.pdf.drawImage(self.invoice.provider.logo_filename, (left + 120) * mm - width, (top + 35) * mm, width, height, mask="auto") #Gedit
+
 
     def _drawClient(self, TOP, LEFT):
-        self._drawAddress(TOP, LEFT, 88, 41, _(u'Invoice to'), self.invoice.client)
+        self._drawAddress(TOP, LEFT, 88, 46, _(u'Invoice to'), self.invoice.client)
 
     def _drawProvider(self, TOP, LEFT):
         self._drawAddress(TOP, LEFT, 88, 36, _(u'Tuition service'), self.invoice.provider)
 
     def _drawPayment(self, TOP, LEFT):
-        self.pdf.setFont('DejaVu-Bold', 8)
-        self.pdf.drawString(LEFT * mm, (TOP + 2) * mm, _(u'QR Code reference'))
-
-        text = self.pdf.beginText((LEFT) * mm, (TOP - 2) * mm)
-        lines = [
-            self.invoice.provider.bank_name
-        ]
+        self.pdf.setFont('DejaVu-Bold', 9)
+        self.pdf.drawString(LEFT * mm, (TOP + 2) * mm, _(u'QR Code scannable details'))
+        self.pdf.setFont('DejaVu', 8)
+        text = self.pdf.beginText((LEFT) * mm, (TOP - 3) * mm)
+        frame = Frame((LEFT + 60) * mm, (TOP + 55) * mm, 50*mm, 20*mm, leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0) #Gedit
+        default = ParagraphStyle('default', fontName='DejaVu', fontSize=11, leading=17, textColor=colors.blue) #Default
+        lines =[]
+        if self.invoice.provider.bank_name:
+            lines.append(self.invoice.provider.bank_name)
         #if self.invoice.provider.bank_account_str():
            # lines.append(
             #    '%s: %s' % (_(u'Account number'), self.invoice.provider.bank_account_str()),
@@ -254,10 +261,10 @@ class SimpleInvoice(BaseInvoice):
             lines.append(
                 '%s: %s' % (_(u'Variable symbol'), self.invoice.variable_symbol),
             )
-        if self.invoice.specific_symbol:
-            lines.append(
-                '%s: %s' % (_(u'Specific symbol'), self.invoice.specific_symbol),
-            )
+        #if self.invoice.specific_symbol:
+         #   lines.append(
+          #      '%s: %s' % (_(u'Specific symbol'), self.invoice.specific_symbol),
+           # )
         if self.invoice.iban:
             lines.append(
                 '%s: %s' % (_(u'IBAN'), self.invoice.iban),
@@ -267,7 +274,14 @@ class SimpleInvoice(BaseInvoice):
                 '%s: %s' % (_(u'SWIFT'), self.invoice.swift),
             )
         text.textLines(lines)
-        self.pdf.drawText(text)
+        #self.pdf.drawText(text)
+
+        #Gedit
+        address = '<link href="' + self.invoice.provider.bank_name + '">' + self.invoice.provider.bank_name.split("https://")[-1] + '</link>'
+        story_inframe = KeepInFrame(55*mm, 20*mm, [Paragraph(address,default)])
+        frame.addFromList([story_inframe], self.pdf)
+
+
 
     def _drawItemsHeader(self,  TOP,  LEFT):
         path = self.pdf.beginPath()
@@ -327,7 +341,7 @@ class SimpleInvoice(BaseInvoice):
     def _drawItems(self, TOP, LEFT):  # noqa
         # Items
         i = self._drawItemsHeader(TOP, LEFT)
-        self.pdf.setFont('DejaVu', 11, leading = 16)
+        self.pdf.setFont('DejaVu', 12, leading = 17)
 
         items_are_with_tax = self.invoice.use_tax
 
@@ -336,8 +350,8 @@ class SimpleInvoice(BaseInvoice):
         for item in self.invoice.items:
             if TOP - i < 30 * mm:
                 will_wrap = True
-
-            style = ParagraphStyle('normal', fontName='DejaVu', fontSize=11, leading =14)
+              
+            style = ParagraphStyle('normal', fontName='DejaVu', fontSize=12, leading =15, textColor=colors.black)
             p = Paragraph(item.description, style)
             pwidth, pheight = p.wrapOn(self.pdf, 90*mm if items_are_with_tax else 105*mm, 30*mm)
             i_add = max(float(pheight)/mm, 6.23)
@@ -360,7 +374,7 @@ class SimpleInvoice(BaseInvoice):
             self.pdf.setLineWidth(1)
 
             i += i_add
-            p.drawOn(self.pdf, (LEFT + 1) * mm, (TOP - i + 3) * mm)
+            p.drawOn(self.pdf, (LEFT + 1) * mm, (TOP - i + 2) * mm)
             i -= 2.23
             if items_are_with_tax:
                 if float(int(item.count)) == item.count:
@@ -374,11 +388,11 @@ class SimpleInvoice(BaseInvoice):
                 i += 5
             else:
                 if float(int(item.count)) == item.count:
-                    self.pdf.drawRightString((LEFT + 123) * mm, (TOP - i+5) * mm, u'%s %s' % (locale.format("%i", item.count, grouping=True), item.unit))
+                    self.pdf.drawRightString((LEFT + 125) * mm, (TOP - i+1) * mm, u'%s %s' % (locale.format("%i", item.count, grouping=True), item.unit))
                 else:
-                    self.pdf.drawRightString((LEFT + 123) * mm, (TOP - i+5) * mm, u'%s %s' % (locale.format("%.2f", item.count, grouping=True), item.unit))
-                self.pdf.drawRightString((LEFT + 156) * mm, (TOP - i+5) * mm, currency(item.price, self.invoice.currency, self.invoice.currency_locale))
-                self.pdf.drawRightString((LEFT + 185) * mm, (TOP - i+5) * mm, currency(item.total, self.invoice.currency, self.invoice.currency_locale))
+                    self.pdf.drawRightString((LEFT + 125) * mm, (TOP - i+1) * mm, u'%s %s' % (locale.format("%.2f", item.count, grouping=True), item.unit))
+                self.pdf.drawRightString((LEFT + 156) * mm, (TOP - i+1) * mm, currency(item.price, self.invoice.currency, self.invoice.currency_locale))
+                self.pdf.drawRightString((LEFT + 185) * mm, (TOP - i+1) * mm, currency(item.total, self.invoice.currency, self.invoice.currency_locale))
                 i += 5
 
         if will_wrap:
@@ -521,7 +535,7 @@ class CorrectingInvoice(SimpleInvoice):
         self._drawClient(self.TOP - 39, self.LEFT + 91)
         self._drawPayment(self.TOP - 47, self.LEFT + 3)
         self.drawCorretion(self.TOP - 73, self.LEFT)
-        self._drawDates(self.TOP - 10, self.LEFT + 91)
+        self._drawDates(self.TOP - 30, self.LEFT + 91)
         self._drawItems(self.TOP - 82, self.LEFT)
 
         # self.pdf.setFillColorRGB(0, 0, 0)
