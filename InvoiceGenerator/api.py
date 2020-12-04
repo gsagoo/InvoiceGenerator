@@ -78,10 +78,10 @@ class Address(UnicodeProperty):
         address_line = [self.summary]
         if self.division:
             address_line.append(self.division)
-        address_line += [
-            self.address, self.city
-           # u' '.join(filter(None, (self.city, self.zip_code))),
-            ]
+        if self.address:
+            address_line+=self.address.split(',')
+        if self.city:
+            address_line.append(self.city)
         if self.zip_code:
             address_line.append(self.zip_code)
         if self.country:
@@ -360,6 +360,13 @@ class QrCodeBuilder(object):
 
         qr_kwargs = {
             'account': invoice.provider.bank_account_str(),
+            'notification_address': invoice.provider.email,
+            'payment_type': invoice.provider.summary,
+            'message': invoice.title,
+            'reference': invoice.number,
+            'recipient_name': invoice.client.summary,
+            'x_url': invoice.provider.bank_name,
+            'due_date': invoice.date,
             'amount': invoice.use_tax and invoice.price_tax or invoice.price,
             'x_ss': invoice.specific_symbol,
         }
