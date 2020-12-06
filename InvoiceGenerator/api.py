@@ -95,10 +95,12 @@ class Address(UnicodeProperty):
         return address_line
 
     def _get_contact_lines(self):
-        return [
-            self.phone,
-            self.email,
-            ]
+        contact_lines= []
+        if self.phone:
+            contact_lines.append(self.phone)
+        if self.email:
+            contact_lines.append(self.email)
+        return contact_lines
 
 
 class Client(Address):
